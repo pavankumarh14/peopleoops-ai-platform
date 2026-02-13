@@ -1,0 +1,11 @@
+{
+  "name": "peopleoops-ai-platform",
+  "version": "1.0.0",
+  "description": "AI Platform with Elastic, Slack integration, and agent-based architecture",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
