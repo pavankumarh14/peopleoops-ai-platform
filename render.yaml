@@ -1,0 +1,7 @@
+# Render deployment configuration
+services:
+  - type: web
+    name: peopleoops-ai-platform
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
