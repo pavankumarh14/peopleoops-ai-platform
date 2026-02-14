@@ -1,4 +1,5 @@
-// Formatter utilities
-module.exports = {
-  // Formatting functions
-};
+function formatCurrency(value) {
+  return `$${Number(value).toLocaleString()}`;
+}
+
+module.exports = { formatCurrency };
