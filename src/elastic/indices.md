@@ -1,8 +1,7 @@
-# Elasticsearch Indices
+Required Indices:
 
-## People Data Index
-- Index Name: `people-data`
-- Contains employee information, HR records, and performance data
+1. hr_employees
+2. hr_performance
+3. hr_leaves
 
-## Configuration
-Index mappings and settings are configured for semantic search capabilities.
+Use these mappings in Elastic Serverless.
