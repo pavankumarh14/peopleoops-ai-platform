@@ -2,9 +2,9 @@
   "name": "peopleops-ai-platform",
   "version": "1.0.0",
   "description": "Multi-Agent PeopleOps AI Platform using Elastic Serverless",
-  "main": "src/server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node src/server.js"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=18.0.0"
