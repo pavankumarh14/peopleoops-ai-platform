@@ -1,24 +1,15 @@
 const client = require("../elastic/client");
-const queries = require("../esql/queries");
+const { runChat } = require("../elastic/inferenceClient");
+const queries = require("../elastic/esql/queries");
 
-async function getEmployeeProfile(employeeId) {
+async function processQuery(userQuery) {
+  const esql = await runChat([
+    { role: "system", content: "Convert this to ES|QL over hr_employees and hr_leaves." },
+    { role: "user", content: userQuery }
+  ]);
 
-  const result = await client.esql.query({
-    query: queries.employeeProfile(employeeId)
-  });
-
-  if (!result.rows.length) {
-    return "Employee not found.";
-  }
-
-  const row = result.rows[0];
-
-  return `
-👤 Employee Profile
-Name: ${row[1]}
-Department: ${row[2]}
-Salary: ${row[3]}
-`;
+  const result = await client.esql.query({ query: esql });
+  return JSON.stringify(result.rows, null, 2);
 }
 
-module.exports = { getEmployeeProfile };
+module.exports = { processQuery };
