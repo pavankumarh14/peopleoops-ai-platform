@@ -1,15 +1,30 @@
 const client = require("../elastic/client");
-const { runChat } = require("../elastic/inferenceClient");
-const queries = require("../elastic/esql/queries");
+const queries = require("../esql/queries");
 
-async function processQuery(userQuery) {
-  const esql = await runChat([
-    { role: "system", content: "Convert this to ES|QL over hr_performance." },
-    { role: "user", content: userQuery }
-  ]);
+async function getPerformanceSummary(employeeId) {
+  try {
+    const result = await client.esql.query({
+      query: queries.performanceSummary(employeeId)
+    });
 
-  const result = await client.esql.query({ query: esql });
-  return JSON.stringify(result.rows, null, 2);
+    if (!result.rows.length) {
+      return "❌ Performance data not found.";
+    }
+
+    const row = result.rows[0];
+
+    return `
+📊 *Performance Summary*
+• Employee: ${employeeId}
+• Rating: ${row[1]}
+• Last Review Cycle: ${row[2]}
+`;
+  } catch (error) {
+    console.error("Performance Agent Error:", error);
+    return "⚠️ Failed to fetch performance summary.";
+  }
 }
 
-module.exports = { processQuery };
+module.exports = {
+  getPerformanceSummary
+};
