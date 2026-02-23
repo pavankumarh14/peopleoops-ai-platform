@@ -7,7 +7,12 @@ async function runChat(messages) {
     inference_id: INFERENCE_ID,
     input: { messages }
   });
-  return response.output?.[0]?.content?.[0]?.text || "";
+
+  if (!response.output?.length) {
+    throw new Error("No inference output");
+  }
+
+  return response.output[0].content[0].text;
 }
 
 module.exports = { runChat };
