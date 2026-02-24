@@ -9,22 +9,42 @@ async function runChat(messages) {
       method: "POST",
       path: `/_inference/${elasticInferenceId}/_stream`,
       body: { messages },
-      asStream: false   // 🔥 important
+      headers: {
+        accept: "text/event-stream"
+      }
     });
 
-    // response.body contains full text after stream ends
-    const raw = response.body;
-
-    // Extract all content pieces
     let finalText = "";
 
-    if (Array.isArray(raw)) {
-      raw.forEach(chunk => {
-        if (chunk?.choices?.length) {
-          const delta = chunk.choices[0]?.delta?.content;
-          if (delta) finalText += delta;
+    // The response is a raw stream
+    const stream = response.body;
+
+    for await (const chunk of stream) {
+      const chunkStr = chunk.toString();
+
+      // Split multiple events if present
+      const lines = chunkStr.split("\n");
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const jsonPart = line.replace("data: ", "").trim();
+
+          if (jsonPart === "[DONE]") continue;
+
+          try {
+            const parsed = JSON.parse(jsonPart);
+
+            if (parsed.choices?.length) {
+              const delta = parsed.choices[0]?.delta?.content;
+              if (delta) {
+                finalText += delta;
+              }
+            }
+          } catch (err) {
+            // Ignore partial JSON chunks
+          }
         }
-      });
+      }
     }
 
     return finalText.trim();
