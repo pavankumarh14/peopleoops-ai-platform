@@ -4,27 +4,29 @@ const { loadEnv } = require("../config/env");
 const { elasticInferenceId } = loadEnv();
 
 async function runChat(messages) {
-  try {
-    const response = await client.transport.request({
-      method: "POST",
-      path: `/_inference/${elasticInferenceId}`,
-      body: {
-        input: {
-          messages
-        }
-      }
-    });
-
-    if (!response.output || !response.output.length) {
-      throw new Error("No inference output");
+  const stream = await client.transport.request({
+    method: "POST",
+    path: `/_inference/${elasticInferenceId}/_stream`,
+    body: {
+      messages
     }
+  });
 
-    return response.output[0].content[0].text;
+  let finalText = "";
 
-  } catch (error) {
-    console.error("Inference Error:", error);
-    throw error;
+  for await (const event of stream) {
+    // Ignore DONE event
+    if (!event || event === "[DONE]") continue;
+
+    if (event.choices?.length) {
+      const delta = event.choices[0]?.delta?.content;
+      if (delta) {
+        finalText += delta;
+      }
+    }
   }
+
+  return finalText.trim();
 }
 
 module.exports = { runChat };
