@@ -7,11 +7,12 @@ async function getCompensationDetails(employeeId) {
       query: queries.compensationDetails(employeeId)
     });
 
-    if (!result.rows.length) {
+    // 🔥 FIX: use result.values (Serverless ES|QL format)
+    if (!result.values || result.values.length === 0) {
       return "❌ Compensation data not found.";
     }
 
-    const row = result.rows[0];
+    const row = result.values[0];
 
     return `
 💰 *Compensation Details*
@@ -35,12 +36,15 @@ async function simulateHike(percentage, employeeId = null) {
       query: queries.compensationDetails(employeeId)
     });
 
-    if (!result.rows.length) {
+    // 🔥 FIX: use result.values
+    if (!result.values || result.values.length === 0) {
       return "❌ Employee not found.";
     }
 
-    const currentSalary = result.rows[0][1];
-    const newSalary = currentSalary + (currentSalary * percentage / 100);
+    const currentSalary = result.values[0][1];
+
+    const newSalary =
+      currentSalary + (currentSalary * percentage) / 100;
 
     return `
 📈 *Hike Simulation*
