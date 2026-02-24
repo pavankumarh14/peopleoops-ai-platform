@@ -8,10 +8,12 @@ const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
  * Detect intent + entities using LLM
  */
 async function detectIntent(userMessage) {
-  const systemPrompt = `
-You are an HR intent classifier.
+  const prompt = `
+Classify the HR intent of this message:
 
-You MUST return one of these EXACT intent values:
+"${userMessage}"
+
+Return ONLY one word from this list:
 
 employee_lookup
 performance_summary
@@ -19,52 +21,42 @@ hike_simulation
 leave_balance
 compensation_details
 unknown
-
-Return ONLY valid JSON in this format:
-
-{
-  "intent": "one_of_the_exact_values_above",
-  "entities": {
-    "employee_id": "E001",
-    "percentage": 10
-  }
-}
-
-Rules:
-- Extract employee_id if present (format E###).
-- Extract hike percentage if mentioned.
-- If no percentage given for hike, default to 10.
-- If no employee_id found, set it to null.
-- If unsure, return intent as "unknown".
-- Do NOT invent new intent names.
-- Return JSON only. No explanation. No markdown.
 `;
 
   try {
-    const response = await runChat([
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userMessage }
-    ]);
+    const response = await runChat(prompt);
 
-    // Clean formatting issues (markdown wrappers etc.)
-    const cleaned = response
-      ?.replace(/```json/g, "")
-      ?.replace(/```/g, "")
-      ?.trim();
-
-    if (!cleaned) {
-      console.log("LLM returned empty response");
+    if (!response) {
       return {
         intent: "unknown",
         entities: { employee_id: null, percentage: null }
       };
     }
 
-    console.log("LLM Raw Response:", cleaned);
+    const intent = response.trim();
 
-    return JSON.parse(cleaned);
+    // Extract employee_id manually (E###)
+    const employeeMatch = userMessage.match(/E\d+/i);
+    const employee_id = employeeMatch ? employeeMatch[0].toUpperCase() : null;
+
+    // Extract percentage manually (for hike simulation)
+    const percentageMatch = userMessage.match(/(\d+)\s*%/);
+    const percentage =
+      percentageMatch && intent === "hike_simulation"
+        ? parseInt(percentageMatch[1])
+        : intent === "hike_simulation"
+        ? 10
+        : null;
+
+    console.log("Detected Intent:", intent);
+    console.log("Entities:", { employee_id, percentage });
+
+    return {
+      intent,
+      entities: { employee_id, percentage }
+    };
   } catch (err) {
-    console.error("Intent Parse Error:", err);
+    console.error("Intent Error:", err);
     return {
       intent: "unknown",
       entities: { employee_id: null, percentage: null }
