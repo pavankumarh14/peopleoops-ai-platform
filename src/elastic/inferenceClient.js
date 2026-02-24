@@ -1,25 +1,40 @@
 // src/elastic/inferenceClient.js
 
-const client = require("./client");
+const axios = require("axios");
 const { loadEnv } = require("../config/env");
 
-const { elasticInferenceId } = loadEnv();
+const {
+  elasticUrl,
+  elasticApiKey,
+  elasticInferenceId
+} = loadEnv();
 
 async function runChat(prompt) {
   try {
-    const response = await client.inference.infer({
-      inference_id: elasticInferenceId,
-      input: prompt
-    });
+    const response = await axios.post(
+      `${elasticUrl}/_inference/${elasticInferenceId}`,
+      {
+        input: prompt
+      },
+      {
+        headers: {
+          Authorization: `ApiKey ${elasticApiKey}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
 
-    if (!response?.output?.length) {
+    if (!response.data?.output?.length) {
       console.log("LLM returned empty response");
       return "";
     }
 
-    return response.output[0].text.trim();
-  } catch (err) {
-    console.error("Inference Error:", err);
+    return response.data.output[0].text.trim();
+  } catch (error) {
+    console.error(
+      "Inference Error:",
+      error.response?.data || error.message
+    );
     return "";
   }
 }
