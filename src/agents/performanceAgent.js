@@ -7,11 +7,12 @@ async function getPerformanceSummary(employeeId) {
       query: queries.performanceSummary(employeeId)
     });
 
-    if (!result.rows.length) {
+    // 🔥 FIX: use result.values (Serverless ES|QL format)
+    if (!result.values || result.values.length === 0) {
       return "❌ Performance data not found.";
     }
 
-    const row = result.rows[0];
+    const row = result.values[0];
 
     return `
 📊 *Performance Summary*
