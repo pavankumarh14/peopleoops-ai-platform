@@ -2,7 +2,7 @@ const axios = require("axios");
 const { loadEnv } = require("../config/env");
 
 const {
-  elasticUrl,
+  elasticServerlessEndpoint,
   elasticApiKey,
   elasticInferenceId
 } = loadEnv();
@@ -10,7 +10,7 @@ const {
 async function runChat(prompt) {
   try {
     const response = await axios.post(
-      `${elasticUrl}/_inference/${elasticInferenceId}`,
+      `${elasticServerlessEndpoint}/_inference/${elasticInferenceId}`,
       {
         input: prompt
       },
@@ -22,7 +22,6 @@ async function runChat(prompt) {
       }
     );
 
-    // 🔥 THIS IS THE FIX
     if (!response.data?.completion?.length) {
       console.log("LLM returned empty response");
       return "";
