@@ -1,10 +1,11 @@
 const client = require("./client");
+const { loadEnv } = require("../config/env");
 
-const INFERENCE_ID = ".openai-gpt-4.1-mini-chat_completion";
+const { elasticInferenceId } = loadEnv();
 
 async function runChat(messages) {
   const response = await client.inference.infer({
-    inference_id: INFERENCE_ID,
+    inference_id: elasticInferenceId,
     input: { messages }
   });
 

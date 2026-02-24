@@ -5,9 +5,13 @@ services:
     buildCommand: npm install
     startCommand: npm start
     envVars:
+      - key: ELASTIC_SERVERLESS_ENDPOINT
+        sync: false
       - key: ELASTIC_URL
         sync: false
       - key: ELASTIC_API_KEY
+        sync: false
+      - key: ELASTIC_INFERENCE_ID
         sync: false
       - key: SLACK_SIGNING_SECRET
         sync: false

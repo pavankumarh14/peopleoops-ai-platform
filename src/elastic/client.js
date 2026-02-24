@@ -1,9 +1,12 @@
 const { Client } = require("@elastic/elasticsearch");
+const { loadEnv } = require("../config/env");
+
+const { elasticServerlessEndpoint, elasticApiKey } = loadEnv();
 
 const client = new Client({
-  node: process.env.ELASTIC_URL,
+  node: elasticServerlessEndpoint,
   auth: {
-    apiKey: process.env.ELASTIC_API_KEY
+    apiKey: elasticApiKey
   }
 });
 

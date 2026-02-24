@@ -57,6 +57,19 @@ ElasticHR Copilot addresses this by combining:
 
 ---
 
+
+## 🔧 Serverless Configuration Alignment
+
+To keep this project aligned with **Elastic Serverless** deployments, use these environment variables:
+
+- `ELASTIC_SERVERLESS_ENDPOINT` (recommended)
+- `ELASTIC_API_KEY`
+- `ELASTIC_INFERENCE_ID` (optional, defaults to `.openai-gpt-4.1-mini-chat_completion`)
+
+`ELASTIC_URL` is still supported as a backward-compatible fallback.
+
+---
+
 ## 🎯 Key Capabilities
 
 - 📊 Workforce analytics in natural language  
