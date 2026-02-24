@@ -18,7 +18,7 @@ function loadEnv() {
     elasticApiKey: requireEnv("ELASTIC_API_KEY"),
     elasticInferenceId:
       process.env.ELASTIC_INFERENCE_ID ||
-      ".openai-gpt-4.1-mini-chat_completion"
+      ".openai-gpt-4.1-mini-completion"
   };
 }
 
