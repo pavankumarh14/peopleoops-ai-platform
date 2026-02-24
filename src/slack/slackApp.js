@@ -11,9 +11,19 @@ async function detectIntent(userMessage) {
   const systemPrompt = `
 You are an HR intent classifier.
 
-Return ONLY valid JSON like this:
+You MUST return one of these EXACT intent values:
+
+employee_lookup
+performance_summary
+hike_simulation
+leave_balance
+compensation_details
+unknown
+
+Return ONLY valid JSON in this format:
+
 {
-  "intent": "employee_lookup | performance_summary | hike_simulation | leave_balance | compensation_details | unknown",
+  "intent": "one_of_the_exact_values_above",
   "entities": {
     "employee_id": "E001",
     "percentage": 10
@@ -24,9 +34,10 @@ Rules:
 - Extract employee_id if present (format E###).
 - Extract hike percentage if mentioned.
 - If no percentage given for hike, default to 10.
-- If no employee_id, set it to null.
-- If you cannot classify, return intent as "unknown".
-- Return ONLY JSON. No explanation. No markdown.
+- If no employee_id found, set it to null.
+- If unsure, return intent as "unknown".
+- Do NOT invent new intent names.
+- Return JSON only. No explanation. No markdown.
 `;
 
   try {
@@ -35,24 +46,28 @@ Rules:
       { role: "user", content: userMessage }
     ]);
 
-    // 🔥 Clean common LLM formatting issues
+    // Clean formatting issues (markdown wrappers etc.)
     const cleaned = response
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
+      ?.replace(/```json/g, "")
+      ?.replace(/```/g, "")
+      ?.trim();
+
+    if (!cleaned) {
+      console.log("LLM returned empty response");
+      return {
+        intent: "unknown",
+        entities: { employee_id: null, percentage: null }
+      };
+    }
 
     console.log("LLM Raw Response:", cleaned);
 
     return JSON.parse(cleaned);
   } catch (err) {
     console.error("Intent Parse Error:", err);
-
     return {
       intent: "unknown",
-      entities: {
-        employee_id: null,
-        percentage: null
-      }
+      entities: { employee_id: null, percentage: null }
     };
   }
 }
@@ -63,7 +78,7 @@ Rules:
 async function handleSlackEvent(req, res) {
   const body = req.body;
 
-  // Slack verification challenge
+  // Slack URL verification
   if (body.type === "url_verification") {
     return res.json({ challenge: body.challenge });
   }
@@ -84,14 +99,26 @@ async function handleSlackEvent(req, res) {
 
       // 1️⃣ Detect intent
       const parsed = await detectIntent(text);
-
       const { intent, entities } = parsed;
 
       console.log("Detected Intent:", intent);
       console.log("Entities:", entities);
 
       // 2️⃣ Route request
-      const response = await route(intent, entities);
+      let response;
+
+      if (intent === "unknown") {
+        response =
+          "🤖 I can help with:\n" +
+          "• Employee profile\n" +
+          "• Performance summary\n" +
+          "• Leave balance\n" +
+          "• Hike simulation\n" +
+          "• Compensation details\n\n" +
+          "Please try one of these.";
+      } else {
+        response = await route(intent, entities);
+      }
 
       // 3️⃣ Reply to Slack
       await postMessage(channel, response);
