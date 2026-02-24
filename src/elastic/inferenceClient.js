@@ -1,5 +1,3 @@
-// src/elastic/inferenceClient.js
-
 const axios = require("axios");
 const { loadEnv } = require("../config/env");
 
@@ -24,12 +22,14 @@ async function runChat(prompt) {
       }
     );
 
-    if (!response.data?.output?.length) {
+    // 🔥 THIS IS THE FIX
+    if (!response.data?.completion?.length) {
       console.log("LLM returned empty response");
       return "";
     }
 
-    return response.data.output[0].text.trim();
+    return response.data.completion[0].result.trim();
+
   } catch (error) {
     console.error(
       "Inference Error:",
