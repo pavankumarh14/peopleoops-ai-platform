@@ -4,16 +4,27 @@ const { loadEnv } = require("../config/env");
 const { elasticInferenceId } = loadEnv();
 
 async function runChat(messages) {
-  const response = await client.inference.infer({
-    inference_id: elasticInferenceId,
-    input: { messages }
-  });
+  try {
+    const response = await client.transport.request({
+      method: "POST",
+      path: `/_inference/${elasticInferenceId}`,
+      body: {
+        input: {
+          messages
+        }
+      }
+    });
 
-  if (!response.output?.length) {
-    throw new Error("No inference output");
+    if (!response.output || !response.output.length) {
+      throw new Error("No inference output");
+    }
+
+    return response.output[0].content[0].text;
+
+  } catch (error) {
+    console.error("Inference Error:", error);
+    throw error;
   }
-
-  return response.output[0].content[0].text;
 }
 
 module.exports = { runChat };
