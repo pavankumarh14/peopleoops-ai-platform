@@ -13,7 +13,7 @@ You are an HR intent classifier.
 
 Return ONLY valid JSON like this:
 {
-  "intent": "employee_lookup | performance_summary | hike_simulation | leave_balance | compensation_details",
+  "intent": "employee_lookup | performance_summary | hike_simulation | leave_balance | compensation_details | unknown",
   "entities": {
     "employee_id": "E001",
     "percentage": 10
@@ -25,19 +25,35 @@ Rules:
 - Extract hike percentage if mentioned.
 - If no percentage given for hike, default to 10.
 - If no employee_id, set it to null.
-- Return ONLY JSON. No explanation.
+- If you cannot classify, return intent as "unknown".
+- Return ONLY JSON. No explanation. No markdown.
 `;
 
-  const response = await runChat([
-    { role: "system", content: systemPrompt },
-    { role: "user", content: userMessage }
-  ]);
-
   try {
-    return JSON.parse(response);
+    const response = await runChat([
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userMessage }
+    ]);
+
+    // 🔥 Clean common LLM formatting issues
+    const cleaned = response
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    console.log("LLM Raw Response:", cleaned);
+
+    return JSON.parse(cleaned);
   } catch (err) {
     console.error("Intent Parse Error:", err);
-    return null;
+
+    return {
+      intent: "unknown",
+      entities: {
+        employee_id: null,
+        percentage: null
+      }
+    };
   }
 }
 
@@ -47,7 +63,7 @@ Rules:
 async function handleSlackEvent(req, res) {
   const body = req.body;
 
-  // Slack verification
+  // Slack verification challenge
   if (body.type === "url_verification") {
     return res.json({ challenge: body.challenge });
   }
@@ -61,22 +77,23 @@ async function handleSlackEvent(req, res) {
       body.event.type === "message" &&
       !body.event.bot_id
     ) {
-      const text = body.event.text.trim();
+      const text = body.event.text?.trim();
       const channel = body.event.channel;
 
-      // 🔥 1️⃣ Detect intent dynamically
-      const parsed = await detectIntent(text);
+      if (!text) return;
 
-      if (!parsed) {
-        return await postMessage(channel, "❌ Could not understand request.");
-      }
+      // 1️⃣ Detect intent
+      const parsed = await detectIntent(text);
 
       const { intent, entities } = parsed;
 
-      // 🔥 2️⃣ Route dynamically
+      console.log("Detected Intent:", intent);
+      console.log("Entities:", entities);
+
+      // 2️⃣ Route request
       const response = await route(intent, entities);
 
-      // 🔥 3️⃣ Reply to Slack
+      // 3️⃣ Reply to Slack
       await postMessage(channel, response);
     }
   } catch (error) {
@@ -88,19 +105,23 @@ async function handleSlackEvent(req, res) {
  * Slack Message Sender
  */
 async function postMessage(channel, text) {
-  await axios.post(
-    "https://slack.com/api/chat.postMessage",
-    {
-      channel,
-      text
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${SLACK_BOT_TOKEN}`,
-        "Content-Type": "application/json"
+  try {
+    await axios.post(
+      "https://slack.com/api/chat.postMessage",
+      {
+        channel,
+        text
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${SLACK_BOT_TOKEN}`,
+          "Content-Type": "application/json"
+        }
       }
-    }
-  );
+    );
+  } catch (err) {
+    console.error("Slack Post Error:", err.response?.data || err.message);
+  }
 }
 
 module.exports = handleSlackEvent;
