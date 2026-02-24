@@ -7,11 +7,12 @@ async function getEmployeeProfile(employeeId) {
       query: queries.employeeProfile(employeeId)
     });
 
-    if (!result.rows.length) {
+    // 🔥 FIX: Use result.values (Serverless ES|QL format)
+    if (!result.values || result.values.length === 0) {
       return "❌ Employee not found.";
     }
 
-    const row = result.rows[0];
+    const row = result.values[0];
 
     return `
 👤 *Employee Profile*
@@ -33,11 +34,12 @@ async function getLeaveBalance(employeeId) {
       query: queries.leaveBalance(employeeId)
     });
 
-    if (!result.rows.length) {
+    // 🔥 FIX: Use result.values
+    if (!result.values || result.values.length === 0) {
       return "❌ Leave data not found.";
     }
 
-    const row = result.rows[0];
+    const row = result.values[0];
 
     return `
 🌴 *Leave Balance*
